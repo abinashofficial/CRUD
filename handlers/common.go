@@ -1,6 +1,6 @@
 package handlers
 
-import "test1Project/handlers/fields"
+import "crud/handlers/fields"
 
 type Store struct {
 	FieldsHandler fields.Handler

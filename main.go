@@ -1,7 +1,7 @@
 package main
 
 import (
-	"test1Project/app"
+	"crud/app"
 )
 
 func main() {
