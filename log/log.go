@@ -132,28 +132,6 @@ func HTTPLog(logMessage string) {
 	doLog(httplog, HTTP, 6, logMessage)
 }
 
-// GenericTrace generates trace log (following standard Tekion log spec)
-func GenericTrace(ctx tapcontext.TContext, traceMessage string, data ...FieldsMap) {
-	var fields FieldsMap
-	if len(data) > 0 {
-		fields = data[0]
-	}
-	if os.Getenv("TEK_SERVICE_TRACE") == "true" {
-		prefix := generatePrefix(ctx)
-		trackingIDs := generateTrackingIDs(ctx)
-		msg := fmt.Sprintf("|%s|%s|",
-			prefix,
-			trackingIDs)
-		if fields != nil && len(fields) > 0 {
-			fieldsBytes, _ := json.Marshal(fields)
-			fieldsString := string(fieldsBytes)
-			traceLog(msg, traceMessage, "|", fieldsString)
-		} else {
-			traceLog(msg, traceMessage)
-		}
-	}
-}
-
 // GenericInfo generates info log (following standard Tekion log spec)
 func GenericInfo(ctx tapcontext.TContext, infoMessage string, data ...FieldsMap) {
 	var fields FieldsMap

@@ -11,7 +11,6 @@ import (
 	authRepo "crud/store/auth"
 	"crud/store/mongo"
 	"crud/tapcontext"
-	_ "github.com/go-redis/redis"
 	"os"
 )
 
@@ -23,15 +22,21 @@ func setupRepos(client model.MongoClient, redisClient redismgr.CacheManager, IsR
 		AuthRepo: authRepo.New(client),
 	}
 }
+
 func setupHandlers() {
 	h = handlers.Store{
 		FieldsHandler: fields.New(),
 	}
 }
+
 func Start() {
 	envPort := os.Getenv("PORT")
 	redisHost := os.Getenv("REDIS_URL")
 	mongoURL := os.Getenv("MONGO_URL")
+
+	//envPort := "8080"
+	//redisHost := "redis://default:5ft4zGUqto38vDS6R0WOcjuudJk6LKlf@redis-11532.c264.ap-south-1-1.ec2.cloud.redislabs.com:11532"
+	//mongoURL := "mongodb+srv://abinash1411999:Abinash1234@cluster0.fpdirql.mongodb.net/?retryWrites=true&w=majority"
 
 	ctx := tapcontext.TContext{
 		Context:    context.Background(),
