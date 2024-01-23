@@ -1,7 +1,9 @@
 package store
 
-import "crud/store/auth"
+import (
+	"crud/store/redismanager"
+)
 
 type Store struct {
-	AuthRepo auth.Repository
+	CacheStore redismanager.CacheManager
 }

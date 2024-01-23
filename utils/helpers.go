@@ -1,24 +1,42 @@
 package utils
 
-var ErrorCodes = map[string]map[string]string{}
-var supportedLang = []string{"en", "fr"}
+import (
+	"fmt"
+	"github.com/gorilla/mux"
+	"net/http"
+)
 
-// CheckKeyInSlice function return true if the passed key is present in the slice, else return false
-func CheckKeyInSlice(strArray []string, key string) bool {
-	if strArray == nil {
-		return false
-	}
-	for _, val := range strArray {
-		if val == key {
+func checkValueInMapOfSlice(key string, Data []map[string]string) bool {
+	for _, value := range Data {
+		if key == value[key] {
 			return true
 		}
 	}
 	return false
 }
 
-func GetError(msg string, lang string) string {
-	if !CheckKeyInSlice(supportedLang, lang) {
-		lang = "en"
+func GetURLParam(r *http.Request, paramName string) (string, error) {
+
+	params := mux.Vars(r)
+
+	param, ok := params[paramName]
+
+	if !ok {
+		return "", fmt.Errorf("%s %q", "url parameter not found", paramName)
 	}
-	return ErrorCodes[lang][msg]
+
+	return param, nil
+}
+
+func GetQueryParam(r *http.Request, paramName string) (string, error) {
+
+	params := r.URL.Query()
+
+	param := params.Get(paramName)
+
+	if param == "" {
+		return "", fmt.Errorf("%s %q", "query parameter not found", paramName)
+	}
+
+	return param, nil
 }

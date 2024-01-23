@@ -1,35 +1,20 @@
 package model
 
-import "go.mongodb.org/mongo-driver/mongo"
-
-var StudentInfo = []TestCase{{Name: "Abi", MobNumber: 994048389}, {Name: "Arun", MobNumber: 987436652}}
-
-type TestCase struct {
-	Name      string
-	MobNumber int
+type User struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Age       int    `json:"age"`
+	MobNumber int    `json:"mob_number"`
 }
 
-type Requests struct {
-	Name string `json:"Name"`
+type StudentInfo struct {
+	Students []User `json:"students_information"`
 }
 
-type OpenApplication struct {
-	AppName        string              `json:"app_name" bson:"app_name"`
-	AppKey         string              `json:"app_key" bson:"app_key"`
-	AppSecret      string              `json:"app_secret" bson:"app_secret"`
-	Brand          string              `json:"brand" bson:"brand"`
-	Description    string              `json:"description" bson:"description"`
-	PermissionsMap map[string][]string `json:"permissions_map" bson:"permissions_map"`
-	Email          string              `json:"email" bson:"email"`
-	Source         string              `json:"source" bson:"source"`
+type GetStudentInfo struct {
+	StudentID string `json:"id"`
 }
 
-type MongoClient struct {
-	PrimaryClient   *mongo.Client
-	SecondaryClient *mongo.Client
-}
-
-type MongoError struct {
-	PrimaryClientError   error
-	SecondaryClientError error
+type UpdateStudentInfo struct {
+	Students User `json:"students_information"`
 }

@@ -2,8 +2,6 @@ package utils
 
 import (
 	"bytes"
-	"crud/log"
-	"crud/tapcontext"
 	"encoding/json"
 	"net/http"
 )
@@ -22,13 +20,10 @@ func ReturnResponse(w http.ResponseWriter, statusCode int, status interface{}) {
 }
 
 // ErrorResponse returns generic error response
-func ErrorResponse(ctx tapcontext.TContext, w http.ResponseWriter, responseErrorMessage string, statusCode int, logError error, fields log.FieldsMap) {
+func ErrorResponse(w http.ResponseWriter, responseErrorMessage string, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	var buf = new(bytes.Buffer)
 	encoder := json.NewEncoder(buf)
-	if logError != nil {
-		log.GenericError(ctx, logError, fields)
-	}
 	_ = encoder.Encode(ErrResponse{Message: responseErrorMessage})
 	w.WriteHeader(statusCode)
 	_, _ = w.Write(buf.Bytes())
