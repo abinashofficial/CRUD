@@ -8,7 +8,6 @@ import (
 	"crud/store/redismanager"
 	"database/sql"
 	"fmt"
-	"os"
 	"github.com/go-redis/redis/v8"
 	_ "github.com/lib/pq"
 )
@@ -31,9 +30,12 @@ func setupHandlers(cacheRepo redismanager.CacheManager, client *redis.Client, sq
 }
 
 func Start() {
-	envPort := os.Getenv("PORT")
-	rediUrl := os.Getenv("REDIS_URL")
-	sqlUrl := os.Getenv("SQL_URL")
+	// envPort := os.Getenv("PORT")
+	// rediUrl := os.Getenv("REDIS_URL")
+	// sqlUrl := os.Getenv("SQL_URL")
+	envPort := "8080"
+	rediUrl := "redis://default:Zbk8sTu9N6zakmvletQG2mT4LfAZ034b@redis-11301.c212.ap-south-1-1.ec2.redns.redis-cloud.com:11301"
+	sqlUrl := "postgresql://develop_owner:fkdK1b9vzohQ@ep-green-feather-a1lerkc8.ap-southeast-1.aws.neon.tech/develop?sslmode=require"
 	sqlDB, err := sql.Open("postgres", sqlUrl)
 	if err != nil {
 		fmt.Println(err, "sql")
