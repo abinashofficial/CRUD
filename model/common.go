@@ -4,7 +4,8 @@ type User struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Age       int    `json:"age"`
-	MobNumber int    `json:"mob_number"`
+	MobNumber string    `json:"mob_number"`
+	Email string `json:"email"`
 }
 
 type StudentInfo struct {

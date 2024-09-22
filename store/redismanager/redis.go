@@ -110,6 +110,37 @@ func (r redisService) UpdateUserData(ctx context.Context, client *redis.Client, 
 	return nil
 }
 
+func (r redisService) CreateUserData(ctx context.Context, client *redis.Client, data model.User) error {
+
+	var users model.StudentInfo
+	// Get data from Redis by user ID
+	userJSON, err := client.Get(ctx, "students_information").Result()
+	if err != nil {
+		return err
+	}
+	// Parse JSON data into User struct
+	err = json.Unmarshal([]byte(userJSON), &users)
+	if err != nil {
+		return err
+	}
+
+	for _, user := range users.Students {
+		if user.ID == data.ID {
+			return fmt.Errorf("%s %q", "student id already there")
+		}
+	}
+	users.Students = append(users.Students, data)
+
+	data1, err := json.Marshal(users)
+
+		// Set data in Redis with key as user ID
+		err = client.Set(ctx, "students_information", data1, 0).Err()
+		if err != nil {
+			return err
+		}
+	return nil
+}
+
 func (r redisService) GetAll(ctx context.Context, client *redis.Client) (model.StudentInfo, error) {
 	var users model.StudentInfo
 

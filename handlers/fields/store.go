@@ -2,26 +2,34 @@ package fields
 
 import (
 	"crud/model"
+	"crud/store/postgresql"
 	"crud/store/redismanager"
 	"crud/utils"
+	"database/sql"
 	"encoding/json"
-	"github.com/go-redis/redis/v8"
+	// "log"
 	"net/http"
+
+	"github.com/go-redis/redis/v8"
 )
 
-func New(cacheRepo redismanager.CacheManager, client *redis.Client) Handler {
+func New(cacheRepo redismanager.CacheManager, client *redis.Client, sqlRepo postgresql.SqlManager, 	sqlDB *sql.DB) Handler {
 	return &fieldHandler{
 		cacheRepo: cacheRepo,
 		client:    client,
+		sqlRepo:sqlRepo,
+		sqlDB:sqlDB,
 	}
 }
 
 type fieldHandler struct {
 	cacheRepo redismanager.CacheManager
 	client    *redis.Client
+	sqlDB        *sql.DB
+	sqlRepo postgresql.SqlManager 
 }
 
-func (h fieldHandler) Create(w http.ResponseWriter, r *http.Request) {
+func (h fieldHandler) CreateAll(w http.ResponseWriter, r *http.Request) {
 	var req model.StudentInfo
 	ctx := r.Context()
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -56,23 +64,6 @@ func (h fieldHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h fieldHandler) Update(w http.ResponseWriter, r *http.Request) {
-	req := model.UpdateStudentInfo{}
-	ctx := r.Context()
-
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	err = h.cacheRepo.UpdateUserData(ctx, h.client, req.Students)
-	if err != nil {
-		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	utils.ReturnResponse(w, http.StatusOK, req)
-}
-
-func (h fieldHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	req := model.User{}
 	ctx := r.Context()
 
@@ -81,8 +72,64 @@ func (h fieldHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	err = h.cacheRepo.UpdateUserData(ctx, h.client, req)
+	if err != nil {
+		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	utils.ReturnResponse(w, http.StatusOK, req)
+}
 
-	err = h.cacheRepo.DeleteUserData(ctx, h.client, req.ID)
+func (h fieldHandler) Create(w http.ResponseWriter, r *http.Request) {
+	req := model.User{}
+	// ctx := r.Context()
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// err = h.cacheRepo.CreateUserData(ctx, h.client, req)
+	// if err != nil {
+	// 	utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+	// if h.sqlDB == nil {
+    //     http.Error(w, "Internal server error", http.StatusInternalServerError)
+    //     log.Println("Database connection is nil")
+    //     return
+    // }
+
+	// err = h.sqlRepo.SetUserData(ctx, h.sqlDB, req)
+	// if err != nil {
+	// 	utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+	sqlStatement := `INSERT INTO users (name, age, mob_number, email, ) VALUES ($1, $2, $3, $4) RETURNING id`
+	id := 0
+	err = h.sqlDB.QueryRow(sqlStatement, req.Name, req.Age, req.MobNumber, req.Email).Scan(&id)
+	if err != nil {
+		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+	}
+	utils.ReturnResponse(w, http.StatusOK, req)
+}
+
+
+
+func (h fieldHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	// req := model.User{}
+	ctx := r.Context()
+
+	// err := json.NewDecoder(r.Body).Decode(&req)
+	// if err != nil {
+	// 	utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	req, err := utils.GetURLParam(r, "student-info")
+
+
+	err = h.cacheRepo.DeleteUserData(ctx, h.client, req)
 	if err != nil {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -4,12 +4,18 @@ import (
 	"crud/handlers"
 	"crud/handlers/fields"
 	mongoStore "crud/store"
+	"crud/store/postgresql"
 	"crud/store/redismanager"
-	"github.com/go-redis/redis/v8"
+	"database/sql"
+	"fmt"
 	"os"
+	"github.com/go-redis/redis/v8"
+	_ "github.com/lib/pq"
 )
 
 var h handlers.Store
+// var db *sql.DB
+
 var repos mongoStore.Store
 
 func setupRepos() {
@@ -17,22 +23,28 @@ func setupRepos() {
 		CacheStore: redismanager.New(),
 	}
 }
-func setupHandlers(cacheRepo redismanager.CacheManager, client *redis.Client) {
+
+func setupHandlers(cacheRepo redismanager.CacheManager, client *redis.Client, sqlRepo postgresql.SqlManager, sqlDB *sql.DB) {
 	h = handlers.Store{
-		FieldsHandler: fields.New(cacheRepo, client),
+		FieldsHandler: fields.New(cacheRepo, client,sqlRepo, sqlDB),
 	}
 }
 
 func Start() {
 	envPort := os.Getenv("PORT")
 	rediUrl := os.Getenv("REDIS_URL")
+	sqlUrl := os.Getenv("SQL_URL")
+	sqlDB, err := sql.Open("postgres", sqlUrl)
+	if err != nil {
+		fmt.Println(err, "sql")
+	}
 	options, err := redis.ParseURL(rediUrl)
 	if err != nil {
-		return
+		fmt.Println(err, "redis")
 	}
 	redisClient := redis.NewClient(options)
 	setupRepos()
-	setupHandlers(repos.CacheStore, redisClient)
+	setupHandlers(repos.CacheStore, redisClient,repos.SqlStore, sqlDB)
 
 	runServer(envPort, h)
 }
