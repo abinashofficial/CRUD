@@ -24,3 +24,7 @@ github.com/lib/pq/oid
 github.com/lib/pq/scram
 # github.com/onsi/gomega v1.30.0
 ## explicit; go 1.18
+# github.com/rs/cors v1.11.1
+## explicit; go 1.13
+github.com/rs/cors
+github.com/rs/cors/internal

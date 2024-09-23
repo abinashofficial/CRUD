@@ -6,10 +6,14 @@ import (
 	"log"
 	"net/http"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
+
 )
 
 func runServer(envPort string, h handlers.Store) {
 	r := mux.NewRouter()
+
+
 	r.HandleFunc("/public/create-all", h.FieldsHandler.CreateAll).Methods(http.MethodPost)
 	r.HandleFunc("/public/create", h.FieldsHandler.Create).Methods(http.MethodPost)
 	r.HandleFunc("/public/get/{student-info}", h.FieldsHandler.Get).Methods(http.MethodGet)
@@ -25,7 +29,14 @@ func runServer(envPort string, h handlers.Store) {
 
 
 
+   // CORS setup
+   c := cors.New(cors.Options{
+	AllowedOrigins:   []string{"https://erp-client-pink.vercel.app/"}, // Allow requests from this origin
+	AllowCredentials: true,
+})
+
+handler := c.Handler(r)
 
 	fmt.Printf("Server listening on port %d...\n", envPort)
-	log.Fatal(http.ListenAndServe(":"+envPort, r))
+	log.Fatal(http.ListenAndServe(":"+envPort, handler))
 }
