@@ -6,7 +6,8 @@ import (
 	"log"
 	"net/http"
 	"github.com/gorilla/mux"
-	"github.com/rs/cors"
+	handler "github.com/gorilla/handlers"
+
 
 )
 
@@ -28,15 +29,56 @@ func runServer(envPort string, h handlers.Store) {
 	r.HandleFunc("/public/recovery", h.FieldsHandler.PasswordChange).Methods(http.MethodPut)
 
 
+corsMiddleware := handler.CORS(
 
-   // CORS setup
-   c := cors.New(cors.Options{
-	AllowedOrigins:   []string{"https://erp-client-pink.vercel.app/"}, // Allow requests from this origin
-	AllowCredentials: true,
-})
+	handler.AllowedOrigins([]string{"*"}), // Allowing all origin as of now
 
-handler := c.Handler(r)
+	handler.AllowedHeaders([]string{
+		"Accept",
+		"Content-Type",
+		"contentType",
+		"Content-Length",
+		"Accept-Encoding",
+		"Client-Security-Token",
+		"X-CSRF-Token",
+		"X-Auth-Token",
+		"processData",
+		"Authorization",
+		"Access-Control-Request-Headers",
+		"Access-Control-Request-Method",
+		"Connection",
+		"Host",
+		"Origin",
+		"User-Agent",
+		"Referer",
+		"Cache-Control",
+		"X-header",
+		"X-Requested-With",
+		"timezone",
+		"locale",
+		"email",
+		"tenant",
+		"dealer",
+		"tap-api-token",
+		"gzip-compress",
+		"task",
+		"x-tap-accesskey",
+		"x-tap-secretkey",
+		"access_token",
+		"application",
+	}),
 
-	fmt.Printf("Server listening on port %d...\n", envPort)
-	log.Fatal(http.ListenAndServe(":"+envPort, handler))
+	handler.AllowedMethods([]string{
+		"POST",
+		"GET",
+		"DELETE",
+		"PUT",
+		"PATCH",
+		"OPTIONS"}),
+
+		handler.AllowCredentials(),
+	)
+ 	fmt.Printf("Server listening on port %d...\n", envPort)
+
+    log.Fatal(http.ListenAndServe(":8080", corsMiddleware(r)))
 }
