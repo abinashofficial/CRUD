@@ -183,13 +183,13 @@ func (h fieldHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	query := "SELECT email FROM employees WHERE email = $1"
     err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.Email)
 		if err == nil {
-			utils.ErrorResponse(w, "Email ID Already Exist", http.StatusInternalServerError)
+			utils.ErrorResponse(w, "Email ID Already Exist", http.StatusBadRequest)
 			return
 		}
 		query = "SELECT mobile_number FROM employees WHERE mobile_number = $1"
 		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.MobileNumber)
 			if err == nil {
-				utils.ErrorResponse(w, "Mobile Number Already Exist", http.StatusInternalServerError)
+				utils.ErrorResponse(w, "Mobile Number Already Exist", http.StatusUnauthorized)
 				return
 			}
 
