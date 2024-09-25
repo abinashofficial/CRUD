@@ -163,9 +163,9 @@ func (h fieldHandler) Login(w http.ResponseWriter, r *http.Request) {
 	password:= ""
     err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password)
 	if err != nil {
-		utils.ErrorResponse(w, "Invalid Email", http.StatusInternalServerError)
+		utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
 	}else if password != req.Password{
-		utils.ErrorResponse(w, "Password Invalid", http.StatusInternalServerError)
+		utils.ErrorResponse(w, "Password Invalid", http.StatusUnauthorized)
 	}
 
 	utils.ReturnResponse(w, http.StatusOK, req)
@@ -216,7 +216,7 @@ func (h fieldHandler) PasswordChange(w http.ResponseWriter, r *http.Request) {
 	query := "SELECT email FROM employees WHERE email = $1"
     err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.Email)
 	if err != nil {
-		utils.ErrorResponse(w,"Invalid Email", http.StatusInternalServerError)
+		utils.ErrorResponse(w,"Invalid Email", http.StatusBadRequest)
 	}
 	sqlStatement := `UPDATE employees
         SET password = $1
