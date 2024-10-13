@@ -9,9 +9,10 @@ import (
 	"encoding/json"
 	// "log"
 	"net/http"
-
 	"github.com/go-redis/redis/v8"
+	"strings"
 )
+
 
 func New(cacheRepo redismanager.CacheManager, client *redis.Client, sqlRepo postgresql.SqlManager, 	sqlDB *sql.DB) Handler {
 	return &fieldHandler{
@@ -159,15 +160,29 @@ func (h fieldHandler) Login(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password FROM employees WHERE email = $1"
+	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, access_token FROM employees WHERE email = $1"
 	password:= ""
-    err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password)
+    err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password, &req.Token)
 	if err != nil {
 		utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
 	}else if password != req.Password{
 		utils.ErrorResponse(w, "Password Invalid", http.StatusUnauthorized)
 	}
 
+	req.Token, err = utils.GenerateJWT(req.Email)
+	if err != nil {
+		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	sqlStatement := `UPDATE employees
+        SET access_token = $1
+        WHERE email = $2`
+	_,err = h.sqlDB.Exec(sqlStatement, req.Token, req.Email)
+	if err != nil {
+		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	req.Password = ""
 	utils.ReturnResponse(w, http.StatusOK, req)
 }
 
@@ -193,13 +208,20 @@ func (h fieldHandler) Signup(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			query = `INSERT INTO employees (first_name, last_name, mobile_number, email, date_of_birth, gender, password ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING employee_id`
-		err = h.sqlDB.QueryRow(query, req.FirstName, req.LastName,req.MobileNumber, req.Email, req.DateOfBirth, req.Gender, req.Password).Scan(&req.EmployeeID)
+		    req.Token, err = utils.GenerateJWT(req.Email)
+			if err != nil {
+				utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+
+			query = `INSERT INTO employees (first_name, last_name, mobile_number, email, date_of_birth, gender, password, access_token ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING employee_id`
+		err = h.sqlDB.QueryRow(query, req.FirstName, req.LastName,req.MobileNumber, req.Email, req.DateOfBirth, req.Gender, req.Password, req.Token).Scan(&req.EmployeeID)
 		if err != nil {
 			utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
+		req.Password = ""
 
 	utils.ReturnResponse(w, http.StatusOK, req)
 }
@@ -222,6 +244,44 @@ func (h fieldHandler) PasswordChange(w http.ResponseWriter, r *http.Request) {
         SET password = $1
         WHERE email = $2`
 	_,err = h.sqlDB.Exec(sqlStatement, req.Password, req.Email)
+	if err != nil {
+		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+	}
+	req.Password = ""
+	utils.ReturnResponse(w, http.StatusOK, req)
+}
+
+
+func (h fieldHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+		return
+	}
+
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+
+	req := model.Signup{}
+	// ctx := r.Context()
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	    // Simulate validation of received token
+		_, err = utils.ValidateJWT(tokenString)
+		if err != nil {
+			utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+			return		}
+
+	sqlStatement := `UPDATE employees
+		             SET first_name = $1, last_name = $2, mobile_number = $3, email = $4, date_of_birth = $5, gender = $6
+        			WHERE employee_id = $7`
+	_,err = h.sqlDB.Exec(sqlStatement, req.FirstName, req.LastName, req.MobileNumber, req.Email, req.DateOfBirth, req.Gender, req.EmployeeID)
 	if err != nil {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 	}

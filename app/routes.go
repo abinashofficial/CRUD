@@ -27,6 +27,8 @@ func runServer(envPort string, h handlers.Store) {
 	r.HandleFunc("/public/signin", h.FieldsHandler.Login).Methods(http.MethodPost)
 	r.HandleFunc("/public/signup", h.FieldsHandler.Signup).Methods(http.MethodPost)
 	r.HandleFunc("/public/recovery", h.FieldsHandler.PasswordChange).Methods(http.MethodPut)
+	r.HandleFunc("/public/updateprofile", h.FieldsHandler.UpdateProfile).Methods(http.MethodPut)
+
 
 
     // Allow all origins with the CORS middleware

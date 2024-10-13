@@ -34,4 +34,5 @@ type Signup struct {
 	DateOfBirth string `json:"date_of_birth"`
 	Gender string `json:"gender"`
 	Password string `json:"password"`
+	Token  string `json:"access_token"`
 }

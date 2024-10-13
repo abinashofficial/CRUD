@@ -12,4 +12,5 @@ type Handler interface {
 	Login(w http.ResponseWriter, r *http.Request)
 	Signup(w http.ResponseWriter, r *http.Request)
 	PasswordChange(w http.ResponseWriter, r *http.Request)
+	UpdateProfile(w http.ResponseWriter, r *http.Request)
 }
