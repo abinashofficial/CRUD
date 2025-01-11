@@ -416,3 +416,19 @@ func CleanupExpiredOTPs() {
 		otpStore.mu.Unlock()
 }
 
+
+func (h fieldHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	req := model.Signup{}
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender FROM employees WHERE email = $1"
+	// password:= ""
+    err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender)
+	if err != nil {
+		utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
+	}
+	utils.ReturnResponse(w, http.StatusOK, req)
+}
