@@ -13,4 +13,6 @@ type Handler interface {
 	Signup(w http.ResponseWriter, r *http.Request)
 	PasswordChange(w http.ResponseWriter, r *http.Request)
 	UpdateProfile(w http.ResponseWriter, r *http.Request)
+	SendOTPHandler(w http.ResponseWriter, r *http.Request)
+	VerifyOTPHandler(w http.ResponseWriter, r *http.Request)
 }

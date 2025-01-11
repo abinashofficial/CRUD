@@ -6,6 +6,10 @@ import (
 	"net/http"
 	    "time"
     "github.com/golang-jwt/jwt/v4"
+    "crypto/rand"
+    "gopkg.in/gomail.v2"
+    "math/big"
+	// "os"
 )
 
 
@@ -93,4 +97,45 @@ func GetQueryParam(r *http.Request, paramName string) (string, error) {
 	}
 
 	return param, nil
+}
+
+
+// GenerateOTP generates a random OTP of the given length
+func GenerateOTP(length int) (string, error) {
+	const digits = "0123456789"
+	var otp string
+	for i := 0; i < length; i++ {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(digits))))
+		if err != nil {
+			return "", err
+		}
+		otp += string(digits[num.Int64()])
+	}
+	return otp, nil
+}
+
+// SendEmail sends an email with the OTP using gomail
+func SendEmail(to, subject, body string) error {
+	// from := os.Getenv("FROM_EMAIL")
+	// password := os.Getenv("EMAIL_PASSWORD")
+
+
+	// SMTP server configuration
+	smtpHost := "smtp.gmail.com"
+	smtpPort := 587
+
+
+	from := "prisonbirdstech@gmail.com"  // Replace with your email
+	appPassword := "gwtx dtxx gppp stki"    // Replace with your email password
+
+	// Create a new gomail message
+	m := gomail.NewMessage()
+	m.SetHeader("From", from)
+	m.SetHeader("To", to)
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/plain", body)
+
+	// Dial and send the email
+	d := gomail.NewDialer(smtpHost, smtpPort, from, appPassword)
+	return d.DialAndSend(m)
 }

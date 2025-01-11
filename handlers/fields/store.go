@@ -6,11 +6,13 @@ import (
 	"crud/store/redismanager"
 	"crud/utils"
 	"database/sql"
-	"encoding/json"
-	// "log"
-	"net/http"
 	"github.com/go-redis/redis/v8"
 	"strings"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"sync"
+	"time"
 )
 
 
@@ -29,6 +31,23 @@ type fieldHandler struct {
 	sqlDB        *sql.DB
 	sqlRepo postgresql.SqlManager 
 }
+
+// var otpStore = struct {
+// 	mu   sync.Mutex
+// 	data map[string]string // Stores OTPs with email as the key
+// }{data: make(map[string]string)}
+
+// OTPData stores the OTP and its expiration time
+type OTPData struct {
+	OTP        string
+	ExpiryTime time.Time
+}
+
+var otpStore = struct {
+	mu   sync.Mutex
+	data map[string]OTPData // Stores OTPs and their expiration times, keyed by email
+}{data: make(map[string]OTPData)}
+
 
 func (h fieldHandler) CreateAll(w http.ResponseWriter, r *http.Request) {
 	var req model.StudentInfo
@@ -287,3 +306,113 @@ func (h fieldHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.ReturnResponse(w, http.StatusOK, req)
 }
+
+
+
+
+
+// SendOTPHandler handles OTP generation and sending
+func (h fieldHandler)SendOTPHandler(w http.ResponseWriter, r *http.Request) {
+	type Request struct {
+		Email string `json:"email"`
+	}
+	type Response struct {
+		Message string `json:"message"`
+	}
+
+	var req Request
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	// Generate OTP
+	otp, err := utils.GenerateOTP(6)
+	if err != nil {
+		http.Error(w, "Failed to generate OTP", http.StatusInternalServerError)
+		return
+	}
+
+	// Store OTP with expiration time
+	otpStore.mu.Lock()
+	otpStore.data[req.Email] = OTPData{
+		OTP:        otp,
+		ExpiryTime: time.Now().Add(1 * time.Minute), // Set expiry to 1 minute
+	}
+	otpStore.mu.Unlock()
+
+	// Send OTP via email
+	subject := "Your OTP Code"
+	body := fmt.Sprintf("Your OTP code is: %s", otp)
+	if err := utils.SendEmail(req.Email, subject, body); err != nil {
+		http.Error(w, "Failed to send OTP", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(Response{Message: "OTP sent successfully"})
+	go CleanupExpiredOTPs()
+
+}
+
+// VerifyOTPHandler handles OTP verification
+func (h fieldHandler)VerifyOTPHandler(w http.ResponseWriter, r *http.Request) {
+	type Request struct {
+		Email string `json:"email"`
+		OTP   string `json:"otp"`
+	}
+	type Response struct {
+		Valid bool   `json:"valid"`
+		Error string `json:"error,omitempty"`
+	}
+
+	var req Request
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	// Check OTP
+	otpStore.mu.Lock()
+	otpData, exists := otpStore.data[req.Email]
+	if !exists {
+		otpStore.mu.Unlock()
+		json.NewEncoder(w).Encode(Response{Valid: false, Error: "No OTP found"})
+		return
+	}
+
+	// Check expiration time
+	if time.Now().After(otpData.ExpiryTime) {
+		delete(otpStore.data, req.Email) // Remove expired OTP
+		otpStore.mu.Unlock()
+		json.NewEncoder(w).Encode(Response{Valid: false, Error: "OTP expired"})
+		return
+	}
+
+	// Check OTP value
+	if otpData.OTP != req.OTP {
+		otpStore.mu.Unlock()
+		json.NewEncoder(w).Encode(Response{Valid: false, Error: "Invalid OTP"})
+		return
+	}
+
+	// OTP is valid, remove it from the store
+	delete(otpStore.data, req.Email)
+	otpStore.mu.Unlock()
+	json.NewEncoder(w).Encode(Response{Valid: true})
+	go CleanupExpiredOTPs()
+
+}
+
+// CleanupExpiredOTPs periodically removes expired OTPs from the store
+func CleanupExpiredOTPs() {
+		otpStore.mu.Lock()
+		now := time.Now()
+		for email, otpData := range otpStore.data {
+			if now.After(otpData.ExpiryTime) {
+				fmt.Println(email, otpData)
+				delete(otpStore.data, email)
+			}
+		}
+		otpStore.mu.Unlock()
+}
+

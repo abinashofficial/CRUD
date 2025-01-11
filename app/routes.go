@@ -28,6 +28,9 @@ func runServer(envPort string, h handlers.Store) {
 	r.HandleFunc("/public/signup", h.FieldsHandler.Signup).Methods(http.MethodPost)
 	r.HandleFunc("/public/recovery", h.FieldsHandler.PasswordChange).Methods(http.MethodPut)
 	r.HandleFunc("/public/updateprofile", h.FieldsHandler.UpdateProfile).Methods(http.MethodPut)
+	r.HandleFunc("/public/send-otp", h.FieldsHandler.SendOTPHandler).Methods(http.MethodPost)
+	r.HandleFunc("/public/verify-otp", h.FieldsHandler.VerifyOTPHandler).Methods(http.MethodPost)
+
 
 
 
