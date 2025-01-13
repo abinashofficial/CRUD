@@ -4,7 +4,7 @@ type User struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Age       int    `json:"age"`
-	MobNumber string    `json:"mob_number"`
+	MobNumber string    `json:"mobile_number"`
 	Email string `json:"email"`
 }
 

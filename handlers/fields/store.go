@@ -312,15 +312,13 @@ func (h fieldHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 
 // SendOTPHandler handles OTP generation and sending
-func (h fieldHandler)SendOTPHandler(w http.ResponseWriter, r *http.Request) {
-	type Request struct {
-		Email string `json:"email"`
-	}
+func (h fieldHandler)SendOTPEmailHandler(w http.ResponseWriter, r *http.Request) {
+
 	type Response struct {
 		Message string `json:"message"`
 	}
 
-	var req Request
+	var req model.Signup
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
@@ -340,7 +338,6 @@ func (h fieldHandler)SendOTPHandler(w http.ResponseWriter, r *http.Request) {
 		ExpiryTime: time.Now().Add(1 * time.Minute), // Set expiry to 1 minute
 	}
 	otpStore.mu.Unlock()
-
 	// Send OTP via email
 	subject := "Your OTP Code"
 	body := fmt.Sprintf("Your OTP code is: %s", otp)
@@ -354,10 +351,62 @@ func (h fieldHandler)SendOTPHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// SendOTPHandler handles OTP generation and sending
+func (h fieldHandler)SendOTPMobHandler(w http.ResponseWriter, r *http.Request) {
+
+	type Response struct {
+		Message string `json:"message"`
+	}
+
+	var req model.Signup
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	// Generate OTP
+	otp, err := utils.GenerateOTP(6)
+	if err != nil {
+		http.Error(w, "Failed to generate OTP", http.StatusInternalServerError)
+		return
+	}
+
+	// Store OTP with expiration time
+	otpStore.mu.Lock()
+	otpStore.data[req.MobileNumber] = OTPData{
+		OTP:        otp,
+		ExpiryTime: time.Now().Add(1 * time.Minute), // Set expiry to 1 minute
+	}
+	otpStore.mu.Unlock()
+
+	// Send OTP via mobile no
+	// Define the external API URL
+	url := "http://login4.spearuc.com/MOBILE_APPS_API/sms_api.php?type=smsquicksend&user=iitmadras&pass=welcome&sender=EVOLGN&t_id=1707166841244742343&to_mobileno="+req.MobileNumber+"&sms_text=Dear%20Applicant,%20Your%20OTP%20for%20Mobile%20No.%20Verification%20is%20"+otp+"%20-%20Prison%20Birds%20Tech%20.%20MJPTBCWREIS%20-%20EVOLGN%20" 
+
+	// Perform the GET request
+	resp, err := http.Get(url)
+	if err != nil {
+		http.Error(w, "Failed to Send OTP", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Check if the status code is 200 (OK)
+	if resp.StatusCode != http.StatusOK {
+		http.Error(w, "Failed to Send OTP in Status Code", http.StatusInternalServerError)
+		return
+		}
+
+	json.NewEncoder(w).Encode(Response{Message: "OTP sent successfully"})
+	go CleanupExpiredOTPs()
+
+}
+
 // VerifyOTPHandler handles OTP verification
 func (h fieldHandler)VerifyOTPHandler(w http.ResponseWriter, r *http.Request) {
 	type Request struct {
 		Email string `json:"email"`
+		Mobile string `json:"mobile_number"`
 		OTP   string `json:"otp"`
 	}
 	type Response struct {
@@ -373,6 +422,30 @@ func (h fieldHandler)VerifyOTPHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check OTP
 	otpStore.mu.Lock()
+
+	if req.Email ==""{
+		otpData, exists := otpStore.data[req.Mobile]
+		if !exists {
+			otpStore.mu.Unlock()
+			json.NewEncoder(w).Encode(Response{Valid: false, Error: "No OTP found"})
+			return
+		}
+	
+		// Check expiration time
+		if time.Now().After(otpData.ExpiryTime) {
+			delete(otpStore.data, req.Email) // Remove expired OTP
+			otpStore.mu.Unlock()
+			json.NewEncoder(w).Encode(Response{Valid: false, Error: "OTP expired"})
+			return
+		}
+
+			// Check OTP value
+	if otpData.OTP != req.OTP {
+		otpStore.mu.Unlock()
+		json.NewEncoder(w).Encode(Response{Valid: false, Error: "Invalid OTP"})
+		return
+	}
+	}else{
 	otpData, exists := otpStore.data[req.Email]
 	if !exists {
 		otpStore.mu.Unlock()
@@ -387,13 +460,16 @@ func (h fieldHandler)VerifyOTPHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Response{Valid: false, Error: "OTP expired"})
 		return
 	}
+		// Check OTP value
+		if otpData.OTP != req.OTP {	
+			otpStore.mu.Unlock()
+			json.NewEncoder(w).Encode(Response{Valid: false, Error: "Invalid OTP"})
+			return
+		}
 
-	// Check OTP value
-	if otpData.OTP != req.OTP {
-		otpStore.mu.Unlock()
-		json.NewEncoder(w).Encode(Response{Valid: false, Error: "Invalid OTP"})
-		return
 	}
+	
+
 
 	// OTP is valid, remove it from the store
 	delete(otpStore.data, req.Email)
@@ -409,7 +485,6 @@ func CleanupExpiredOTPs() {
 		now := time.Now()
 		for email, otpData := range otpStore.data {
 			if now.After(otpData.ExpiryTime) {
-				fmt.Println(email, otpData)
 				delete(otpStore.data, email)
 			}
 		}
@@ -424,11 +499,21 @@ func (h fieldHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender FROM employees WHERE email = $1"
-	// password:= ""
-    err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender)
-	if err != nil {
-		utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
+	if req.Email ==""{
+		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender FROM employees WHERE mobile_number = $1"
+		// password:= ""
+		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender)
+		if err != nil {
+			utils.ErrorResponse(w, "Invalid Mobile Number", http.StatusBadRequest)
+		}
+	}else{
+		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender FROM employees WHERE email = $1"
+		// password:= ""
+		err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender)
+		if err != nil {
+			utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
+		}
 	}
+
 	utils.ReturnResponse(w, http.StatusOK, req)
 }
