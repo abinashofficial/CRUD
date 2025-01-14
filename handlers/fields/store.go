@@ -335,7 +335,7 @@ func (h fieldHandler)SendOTPEmailHandler(w http.ResponseWriter, r *http.Request)
 	otpStore.mu.Lock()
 	otpStore.data[req.Email] = OTPData{
 		OTP:        otp,
-		ExpiryTime: time.Now().Add(1 * time.Minute), // Set expiry to 1 minute
+		ExpiryTime: time.Now().Add(5 * time.Minute), // Set expiry to 1 minute
 	}
 	otpStore.mu.Unlock()
 	// Send OTP via email
@@ -375,7 +375,7 @@ func (h fieldHandler)SendOTPMobHandler(w http.ResponseWriter, r *http.Request) {
 	otpStore.mu.Lock()
 	otpStore.data[req.MobileNumber] = OTPData{
 		OTP:        otp,
-		ExpiryTime: time.Now().Add(1 * time.Minute), // Set expiry to 1 minute
+		ExpiryTime: time.Now().Add(5 * time.Minute), // Set expiry to 1 minute
 	}
 	otpStore.mu.Unlock()
 
