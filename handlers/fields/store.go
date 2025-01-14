@@ -179,9 +179,9 @@ func (h fieldHandler) Login(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, access_token FROM employees WHERE email = $1"
+	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password FROM employees WHERE email = $1"
 	password:= ""
-    err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password, &req.Token)
+    err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password)
 	if err != nil {
 		utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
 	}else if password != req.Password{
@@ -193,14 +193,7 @@ func (h fieldHandler) Login(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	sqlStatement := `UPDATE employees
-        SET access_token = $1
-        WHERE email = $2`
-	_,err = h.sqlDB.Exec(sqlStatement, req.Token, req.Email)
-	if err != nil {
-		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+
 	req.Password = ""
 	utils.ReturnResponse(w, http.StatusOK, req)
 }
@@ -513,6 +506,12 @@ func (h fieldHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
 		}
+	}
+
+	req.Token, err = utils.GenerateJWT(req.Email)
+	if err != nil {
+		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	utils.ReturnResponse(w, http.StatusOK, req)
