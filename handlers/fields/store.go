@@ -179,7 +179,7 @@ func (h fieldHandler) Login(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, access_token FROM employees WHERE email = $1"
+	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password FROM employees WHERE email = $1"
 	password:= ""
     err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password)
 	if err != nil {
