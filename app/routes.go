@@ -32,7 +32,6 @@ func runServer(envPort string, h handlers.Store) {
 	r.HandleFunc("/public/verify-otp", h.FieldsHandler.VerifyOTPHandler).Methods(http.MethodPost)
 	r.HandleFunc("/public/get-user", h.FieldsHandler.GetUser).Methods(http.MethodPost)
 	r.HandleFunc("/public/send-otp-mobile-no", h.FieldsHandler.SendOTPMobHandler).Methods(http.MethodPost)
-		r.HandleFunc("/public/googledrive", h.FieldsHandler.GetImage).Methods(http.MethodPost)
 
 
 

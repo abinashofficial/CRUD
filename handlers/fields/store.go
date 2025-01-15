@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"sync"
 	"time"
-	"io"
 )
 
 
@@ -180,7 +179,7 @@ func (h fieldHandler) Login(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, country_code FROM employees WHERE email = $1"
+	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, access_token FROM employees WHERE email = $1"
 	password:= ""
     err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password)
 	if err != nil {
@@ -518,28 +517,3 @@ func (h fieldHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	utils.ReturnResponse(w, http.StatusOK, req)
 }
 
-
-func (h fieldHandler) GetImage(w http.ResponseWriter, r *http.Request) {
-
-	type Url struct {
-		Url string `json:"url"`
-	}
-	var url Url
-	tempList := strings.Split(url.Url, "/")
-	fileID := tempList
-	link := fmt.Sprintf("https://drive.google.com/uc?id=%s", fileID)
-
-	// Fetch the file
-	resp, err := http.Get(link)
-	if err != nil {
-		http.Error(w, "Failed to fetch image", http.StatusInternalServerError)
-		return
-	}	
-	defer resp.Body.Close()
-
-	// Set appropriate headers and stream the file to the client
-	w.Header().Set("Content-Type", "image/jpeg") // Adjust MIME type as needed
-	w.WriteHeader(http.StatusOK)
-	io.Copy(w, resp.Body)
-
-}
