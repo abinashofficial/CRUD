@@ -227,8 +227,8 @@ func (h fieldHandler) Signup(w http.ResponseWriter, r *http.Request) {
 			}
 
 
-			query = `INSERT INTO employees (first_name, last_name, mobile_number, email, date_of_birth, gender, password, access_token, country_code ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING employee_id`
-		err = h.sqlDB.QueryRow(query, req.FirstName, req.LastName,req.MobileNumber, req.Email, req.DateOfBirth, req.Gender, req.Password, req.Token, req.CountryCode).Scan(&req.EmployeeID)
+			query = `INSERT INTO employees (first_name, last_name, mobile_number, email, date_of_birth, gender, password, country_code ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING employee_id`
+		err = h.sqlDB.QueryRow(query, req.FirstName, req.LastName,req.MobileNumber, req.Email, req.DateOfBirth, req.Gender, req.Password, req.CountryCode).Scan(&req.EmployeeID)
 		if err != nil {
 			utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 			return
