@@ -179,9 +179,9 @@ func (h fieldHandler) Login(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password FROM employees WHERE email = $1"
+	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, country_code FROM employees WHERE email = $1"
 	password:= ""
-    err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password)
+    err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password, &req.CountryCode)
 	if err != nil {
 		utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
 	}else if password != req.Password{
@@ -495,14 +495,14 @@ func (h fieldHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	if req.Email ==""{
 		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender, country_code FROM employees WHERE mobile_number = $1"
 		// password:= ""
-		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender)
+		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode)
 		if err != nil {
 			utils.ErrorResponse(w, "Invalid Mobile Number", http.StatusBadRequest)
 		}
 	}else{
 		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender, country_code FROM employees WHERE email = $1"
 		// password:= ""
-		err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender)
+		err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode)
 		if err != nil {
 			utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
 		}
