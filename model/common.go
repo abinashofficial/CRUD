@@ -25,6 +25,7 @@ type Login struct {
 	Email string `json:"email"`
 }
 
+
 type Signup struct {
 	EmployeeID string `json:"employee_id"`
 	FirstName    string `json:"first_name"`
@@ -35,4 +36,5 @@ type Signup struct {
 	Gender string `json:"gender"`
 	Password string `json:"password"`
 	Token  string `json:"access_token"`
+	CountryCode  string  `json:"country_code"`
 }
