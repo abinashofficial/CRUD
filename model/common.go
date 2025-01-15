@@ -36,5 +36,5 @@ type Signup struct {
 	Gender string `json:"gender"`
 	Password string `json:"password"`
 	Token  string `json:"access_token"`
-	CountryCode  string  `json:"country_code"`
+	CountryCode  *string  `json:"country_code"`
 }

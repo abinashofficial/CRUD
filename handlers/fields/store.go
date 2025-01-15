@@ -498,6 +498,7 @@ func (h fieldHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode)
 		if err != nil {
 			utils.ErrorResponse(w, "Invalid Mobile Number", http.StatusBadRequest)
+			return
 		}
 	}else{
 		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender, country_code FROM employees WHERE email = $1"
@@ -505,6 +506,7 @@ func (h fieldHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode)
 		if err != nil {
 			utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
+			return
 		}
 	}
 
