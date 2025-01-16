@@ -179,9 +179,9 @@ func (h fieldHandler) Login(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, country_code FROM employees WHERE email = $1"
+	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, country_code, photo_url FROM employees WHERE email = $1"
 	password:= ""
-    err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password, &req.CountryCode)
+    err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password, &req.CountryCode, &req.PhotoUrl)
 	if err != nil {
 		utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
 	}else if password != req.Password{
@@ -227,8 +227,8 @@ func (h fieldHandler) Signup(w http.ResponseWriter, r *http.Request) {
 			}
 
 
-			query = `INSERT INTO employees (first_name, last_name, mobile_number, email, date_of_birth, gender, password, country_code ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING employee_id`
-		err = h.sqlDB.QueryRow(query, req.FirstName, req.LastName,req.MobileNumber, req.Email, req.DateOfBirth, req.Gender, req.Password, req.CountryCode).Scan(&req.EmployeeID)
+			query = `INSERT INTO employees (first_name, last_name, mobile_number, email, date_of_birth, gender, password, country_code, photo_url ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING employee_id`
+		err = h.sqlDB.QueryRow(query, req.FirstName, req.LastName,req.MobileNumber, req.Email, req.DateOfBirth, req.Gender, req.Password, req.CountryCode, req.PhotoUrl).Scan(&req.EmployeeID)
 		if err != nil {
 			utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -291,9 +291,9 @@ func (h fieldHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			return		}
 
 	sqlStatement := `UPDATE employees
-		             SET first_name = $1, last_name = $2, mobile_number = $3, email = $4, date_of_birth = $5, gender = $6, country_code =$7
+		             SET first_name = $1, last_name = $2, mobile_number = $3, email = $4, date_of_birth = $5, gender = $6, country_code =$7, photo_url
         			WHERE employee_id = $8`
-	_,err = h.sqlDB.Exec(sqlStatement, req.FirstName, req.LastName, req.MobileNumber, req.Email, req.DateOfBirth, req.Gender,req.CountryCode, req.EmployeeID)
+	_,err = h.sqlDB.Exec(sqlStatement, req.FirstName, req.LastName, req.MobileNumber, req.Email, req.DateOfBirth, req.Gender,req.CountryCode, req.PhotoUrl, req.EmployeeID)
 	if err != nil {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -493,17 +493,17 @@ func (h fieldHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Email ==""{
-		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender, country_code FROM employees WHERE mobile_number = $1"
+		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender, country_code, photo_url FROM employees WHERE mobile_number = $1"
 		// password:= ""
-		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode)
+		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode, &req.PhotoUrl)
 		if err != nil {
 			utils.ErrorResponse(w, "Invalid Mobile Number", http.StatusBadRequest)
 			return
 		}
 	}else{
-		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender, country_code FROM employees WHERE email = $1"
+		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender, country_code, photo_url FROM employees WHERE email = $1"
 		// password:= ""
-		err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode)
+		err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode, &req.PhotoUrl)
 		if err != nil {
 			utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
 			return
