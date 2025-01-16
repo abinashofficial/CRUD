@@ -130,6 +130,7 @@ func (h fieldHandler) Create(w http.ResponseWriter, r *http.Request) {
 	err = h.sqlDB.QueryRow(sqlStatement, req.Name, req.Age, req.MobNumber, req.Email).Scan(&id)
 	if err != nil {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	utils.ReturnResponse(w, http.StatusOK, req)
 }
@@ -183,9 +184,11 @@ func (h fieldHandler) Login(w http.ResponseWriter, r *http.Request) {
 	password:= ""
     err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password, &req.CountryCode, &req.PhotoUrl)
 	if err != nil {
-		utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
+		utils.ErrorResponse(w, "Invalid Email - "+ err.Error(), http.StatusBadRequest)
+		return
 	}else if password != req.Password{
-		utils.ErrorResponse(w, "Password Invalid", http.StatusUnauthorized)
+		utils.ErrorResponse(w, "Password Invalid - " + err.Error(), http.StatusUnauthorized)
+		return
 	}
 
 	req.Token, err = utils.GenerateJWT(req.Email)
@@ -251,6 +254,7 @@ func (h fieldHandler) PasswordChange(w http.ResponseWriter, r *http.Request) {
     err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.Email)
 	if err != nil {
 		utils.ErrorResponse(w,"Invalid Email", http.StatusBadRequest)
+		return
 	}
 	sqlStatement := `UPDATE employees
         SET password = $1
@@ -258,6 +262,7 @@ func (h fieldHandler) PasswordChange(w http.ResponseWriter, r *http.Request) {
 	_,err = h.sqlDB.Exec(sqlStatement, req.Password, req.Email)
 	if err != nil {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	req.Password = ""
 	utils.ReturnResponse(w, http.StatusOK, req)
@@ -296,6 +301,7 @@ func (h fieldHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	_,err = h.sqlDB.Exec(sqlStatement, req.FirstName, req.LastName, req.MobileNumber, req.Email, req.DateOfBirth, req.Gender,req.CountryCode, req.PhotoUrl, req.EmployeeID)
 	if err != nil {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	utils.ReturnResponse(w, http.StatusOK, req)
 }
