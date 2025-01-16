@@ -262,7 +262,7 @@ func (h fieldHandler) PasswordChange(w http.ResponseWriter, r *http.Request) {
 	_,err = h.sqlDB.Exec(sqlStatement, req.Password, req.Email)
 	if err != nil {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
-		return
+		return		
 	}
 	req.Password = ""
 	utils.ReturnResponse(w, http.StatusOK, req)
@@ -296,8 +296,8 @@ func (h fieldHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			return		}
 
 	sqlStatement := `UPDATE employees
-		             SET first_name = $1, last_name = $2, mobile_number = $3, email = $4, date_of_birth = $5, gender = $6, country_code =$7, photo_url
-        			WHERE employee_id = $8`
+		             SET first_name = $1, last_name = $2, mobile_number = $3, email = $4, date_of_birth = $5, gender = $6, country_code =$7, photo_url =$8
+        			WHERE employee_id = $9`
 	_,err = h.sqlDB.Exec(sqlStatement, req.FirstName, req.LastName, req.MobileNumber, req.Email, req.DateOfBirth, req.Gender,req.CountryCode, req.PhotoUrl, req.EmployeeID)
 	if err != nil {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)

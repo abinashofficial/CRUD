@@ -33,7 +33,7 @@ func runServer(envPort string, h handlers.Store) {
 	r.HandleFunc("/public/get-user", h.FieldsHandler.GetUser).Methods(http.MethodPost)
 	r.HandleFunc("/public/send-otp-mobile-no", h.FieldsHandler.SendOTPMobHandler).Methods(http.MethodPost)
 
-
+	
 
 
 
