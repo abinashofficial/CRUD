@@ -174,20 +174,30 @@ func (h fieldHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 func (h fieldHandler) Login(w http.ResponseWriter, r *http.Request) {
 	req := model.Signup{}
 	// ctx := r.Context()
-
+	password:= ""
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, country_code, photo_url FROM employees WHERE email = $1"
-	password:= ""
-    err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password, &req.CountryCode, &req.PhotoUrl)
-	if err != nil {
-		utils.ErrorResponse(w, "Invalid Email - "+ err.Error(), http.StatusBadRequest)
-		return
-	}else if password != req.Password{
-		utils.ErrorResponse(w, "Password Invalid - " + err.Error(), http.StatusUnauthorized)
+
+	if req.Email !=""{
+		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, country_code, photo_url FROM employees WHERE email = $1"
+		err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password, &req.CountryCode, &req.PhotoUrl)
+		if err != nil {
+			utils.ErrorResponse(w, "Invalid Email - "+ err.Error(), http.StatusBadRequest)
+			return
+		}
+	}else if req.MobileNumber !=""{
+		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, country_code, photo_url FROM employees WHERE mobile_number = $1"
+		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password, &req.CountryCode, &req.PhotoUrl)
+		if err != nil {
+			utils.ErrorResponse(w, "Invalid Mobile Number - "+ err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+if password != req.Password{
+		utils.ErrorResponse(w, "Password Invalid", http.StatusUnauthorized)
 		return
 	}
 
