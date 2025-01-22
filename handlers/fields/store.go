@@ -252,13 +252,49 @@ func (h fieldHandler) Signup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h fieldHandler) PasswordChange(w http.ResponseWriter, r *http.Request) {
-	req := model.Login{}
+	req := model.Signup{}
 	// ctx := r.Context()
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	if req.Email ==""{
+		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender, country_code, photo_url FROM employees WHERE mobile_number = $1"
+		// password:= ""
+		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode, &req.PhotoUrl)
+		if err != nil {
+			utils.ErrorResponse(w, "Invalid Mobile Number", http.StatusBadRequest)
+			return
+		}
+
+		sqlStatement := `UPDATE employees
+        SET password = $1
+        WHERE mobile_number = $2`
+	_,err = h.sqlDB.Exec(sqlStatement, req.Password, req.MobileNumber)
+	if err != nil {
+		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return		
+	}
+	}else{
+		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender, country_code, photo_url FROM employees WHERE email = $1"
+		// password:= ""
+		err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode, &req.PhotoUrl)
+		if err != nil {
+			utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
+			return
+		}
+
+		sqlStatement := `UPDATE employees
+        SET password = $1
+        WHERE email = $2`
+	_,err = h.sqlDB.Exec(sqlStatement, req.Password, req.Email)
+	if err != nil {
+		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return		
+	}
 	}
 	query := "SELECT email FROM employees WHERE email = $1"
     err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.Email)

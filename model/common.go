@@ -23,6 +23,7 @@ type UpdateStudentInfo struct {
 type Login struct {
 	Password    string `json:"password"`
 	Email string `json:"email"`
+	MobileNumber string `json:"mobile_number"`
 }
 
 
