@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"sync"
 	"time"
+	"github.com/gorilla/websocket"
 )
 
 
@@ -47,6 +48,18 @@ var otpStore = struct {
 	mu   sync.Mutex
 	data map[string]OTPData // Stores OTPs and their expiration times, keyed by email
 }{data: make(map[string]OTPData)}
+
+
+// Upgrade HTTP connection to WebSocket
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true // Allow all origins (adjust for production)
+	},
+}
+
+// Store user connections
+var clients = make(map[string]*websocket.Conn)
+var mu sync.Mutex
 
 
 func (h fieldHandler) CreateAll(w http.ResponseWriter, r *http.Request) {
@@ -169,6 +182,28 @@ func (h fieldHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.ReturnResponse(w, http.StatusOK, users)
 }
+
+
+
+
+// Function to send a notification to a specific user
+func sendNotification(userID string, message string) {
+	mu.Lock()
+	defer mu.Unlock()
+	conn, exists := clients[userID]
+	if exists {
+		err := conn.WriteMessage(websocket.TextMessage, []byte(message))
+		if err != nil {
+			fmt.Printf("Error sending message to %s: %v\n", userID, err)
+		} else {
+			fmt.Printf("Message sent to %s: %s\n", userID, message)
+		}
+	} else {
+		fmt.Printf("User %s is not connected\n", userID)
+	}
+}
+
+
 
 
 func (h fieldHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -567,7 +602,56 @@ func (h fieldHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	utils.ReturnResponse(w, http.StatusOK, req)
 }
+
+
+
+// Handle WebSocket connections
+func (h fieldHandler)HandleConnections(w http.ResponseWriter, r *http.Request) {
+	// Parse user ID from query parameters
+	userID := r.URL.Query().Get("userId")
+	if userID == "" {
+		http.Error(w, "Missing userId", http.StatusBadRequest)
+		return
+	}
+
+	// Upgrade the connection
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		fmt.Println("Error upgrading connection:", err)
+		return
+	}
+	defer conn.Close()
+
+	// Add user to clients map
+	mu.Lock()
+	clients[userID] = conn
+	mu.Unlock()
+	fmt.Printf("User %s connected\n", userID)
+	if userID != "abinash1411999@gmail.com" {
+		go sendNotification("abinash1411999@gmail.com", userID+ "  Online")
+	}
+	// Listen for messages from the client
+	for {
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			fmt.Printf("User %s disconnected\n", userID)
+			if userID != "abinash1411999@gmail.com" {
+				go sendNotification("abinash1411999@gmail.com", userID+ "  Offline")
+			}
+
+			break
+		}
+		fmt.Printf("Received message from %s: %s\n", userID, msg)
+	}
+	// Remove user from clients map on disconnect
+	mu.Lock()
+	delete(clients, userID)
+	mu.Unlock()
+
+}
+
+
+
 

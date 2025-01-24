@@ -17,5 +17,5 @@ type Handler interface {
 	SendOTPMobHandler(w http.ResponseWriter, r *http.Request)
 	VerifyOTPHandler(w http.ResponseWriter, r *http.Request)
 	GetUser(w http.ResponseWriter, r *http.Request)
-
+	HandleConnections(w http.ResponseWriter, r *http.Request)
 }

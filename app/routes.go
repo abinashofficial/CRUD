@@ -6,10 +6,32 @@ import (
 	"log"
 	"net/http"
 	"github.com/gorilla/mux"
-	handler "github.com/gorilla/handlers"
+	// handler "github.com/gorilla/handlers"
 
 
 )
+
+// CORS middleware to set the headers
+func enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Allow requests from the frontend (e.g., http://localhost:3000)
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		// Allow specific methods (GET, POST, OPTIONS, etc.)
+		w.Header().Set("Access-Control-Allow-Methods", "*")
+
+		// Allow specific headers
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+
+		// Handle preflight OPTIONS requests
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
 
 func runServer(envPort string, h handlers.Store) {
 	r := mux.NewRouter()
@@ -32,6 +54,12 @@ func runServer(envPort string, h handlers.Store) {
 	r.HandleFunc("/public/verify-otp", h.FieldsHandler.VerifyOTPHandler).Methods(http.MethodPost)
 	r.HandleFunc("/public/get-user", h.FieldsHandler.GetUser).Methods(http.MethodPost)
 	r.HandleFunc("/public/send-otp-mobile-no", h.FieldsHandler.SendOTPMobHandler).Methods(http.MethodPost)
+	r.HandleFunc("/ws", h.FieldsHandler.HandleConnections)
+	// http.HandleFunc("/ws", h.FieldsHandler.HandleConnections)
+
+
+
+
 
 	
 
@@ -40,13 +68,9 @@ func runServer(envPort string, h handlers.Store) {
 
 
 
-    // Allow all origins with the CORS middleware
-    corsMiddleware := handler.CORS(
-        handler.AllowedOrigins([]string{"*"}), // Allow all origins
-        handler.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE"}), // Allowed methods
-        handler.AllowedHeaders([]string{"Content-Type", "Authorization"}), // Allowed headers
-    )
+	// Wrap the router with CORS middleware
+	http.Handle("/", enableCORS(r))
  	fmt.Printf("Server listening on port %d...\n", envPort)
 
-    log.Fatal(http.ListenAndServe(":8080", corsMiddleware(r)))
+    log.Fatal(http.ListenAndServe(":8080", nil))
 }
