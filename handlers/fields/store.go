@@ -377,9 +377,9 @@ func (h fieldHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			return		}
 
 	sqlStatement := `UPDATE employees
-		             SET first_name = $1, last_name = $2, mobile_number = $3, email = $4, date_of_birth = $5, gender = $6, country_code =$7, photo_url =$8
-        			WHERE employee_id = $9`
-	_,err = h.sqlDB.Exec(sqlStatement, req.FirstName, req.LastName, req.MobileNumber, req.Email, req.DateOfBirth, req.Gender,req.CountryCode, req.PhotoUrl, req.EmployeeID)
+		             SET first_name = $1, last_name = $2, mobile_number = $3, email = $4, date_of_birth = $5, gender = $6, country_code =$7, photo_url =$8, coins = $9
+        			WHERE employee_id = $10`
+	_,err = h.sqlDB.Exec(sqlStatement, req.FirstName, req.LastName, req.MobileNumber, req.Email, req.DateOfBirth, req.Gender,req.CountryCode, req.PhotoUrl,req.Coins, req.EmployeeID)
 	if err != nil {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
