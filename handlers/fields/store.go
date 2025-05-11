@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 	"github.com/gorilla/websocket"
+	"log"
 )
 
 
@@ -384,6 +385,7 @@ func (h fieldHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	notifyUser(req.Email , req.Coins )
 	utils.ReturnResponse(w, http.StatusOK, req)
 }
 
@@ -652,6 +654,95 @@ func (h fieldHandler)HandleConnections(w http.ResponseWriter, r *http.Request) {
 
 }
 
+type Client struct {
+	userID  string
+	writer  http.ResponseWriter
+	flusher http.Flusher
+	done    chan struct{}
+}
+
+var sseClients = make(map[string][]Client)// userID → message channel
 
 
 
+
+
+func (h fieldHandler)SSEHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("userId")
+	if userID == "" {
+		http.Error(w, "Missing userId", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+
+	done := r.Context().Done() // This will be closed when the client disconnects
+
+	client := Client{
+		userID:  userID,
+		writer:  w,
+		flusher: flusher,
+		done:    make(chan struct{}),
+	}
+
+	sseClients[userID] = append(sseClients[userID], client)
+
+	log.Printf("Client connected: %s", userID)
+
+	notify := w.(http.CloseNotifier).CloseNotify()
+
+	go func() {
+		<-notify
+		log.Printf("Client disconnected: %s", userID)
+		removeClient(userID, client)
+	}()
+
+	// Keep the connection alive
+	for {
+		select {
+		case <-done:
+			return
+		default:
+			// heartbeat (optional)
+		}
+	}
+}
+
+
+
+func removeClient(userID string, client Client) {
+	activeClients := sseClients[userID]
+	updatedClients := make([]Client, 0)
+
+	for _, c := range activeClients {
+		if c.writer != client.writer {
+			updatedClients = append(updatedClients, c)
+		}
+	}
+
+	if len(updatedClients) == 0 {
+		delete(sseClients, userID)
+		log.Printf("No more connections for user: %s. Cache cleared.", userID)
+		// 🔥 Clear user-specific cache here if needed
+	} else {
+		sseClients[userID] = updatedClients
+	}
+}
+
+
+func  notifyUser(userID string, coins int) {
+	for _, client := range sseClients[userID] {
+		msg := fmt.Sprintf("data: {\"coins\": %d}\n\n", coins)
+		client.writer.Write([]byte(msg))
+		client.flusher.Flush()
+	}
+	
+}

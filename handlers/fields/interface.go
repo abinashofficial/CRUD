@@ -18,4 +18,5 @@ type Handler interface {
 	VerifyOTPHandler(w http.ResponseWriter, r *http.Request)
 	GetUser(w http.ResponseWriter, r *http.Request)
 	HandleConnections(w http.ResponseWriter, r *http.Request)
+	SSEHandler(w http.ResponseWriter, r *http.Request)
 }

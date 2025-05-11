@@ -60,6 +60,8 @@ func runServer(envPort string, h handlers.Store) {
 	// WebSocket route
 	r.HandleFunc("/ws", h.FieldsHandler.HandleConnections).Methods(http.MethodGet)
 
+
+   r.HandleFunc("/events",h.FieldsHandler.SSEHandler)
 	// Wrap the router with CORS middleware
 	http.Handle("/", enableCORS(r))
 
