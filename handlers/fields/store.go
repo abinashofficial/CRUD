@@ -217,15 +217,15 @@ func (h fieldHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.Email !=""{
-		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, country_code, photo_url FROM employees WHERE email = $1"
-		err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password, &req.CountryCode, &req.PhotoUrl)
+		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, country_code, photo_url, coins FROM employees WHERE email = $1"
+		err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password, &req.CountryCode, &req.PhotoUrl, &req.Coins)
 		if err != nil {
 			utils.ErrorResponse(w, "Invalid Email - "+ err.Error(), http.StatusBadRequest)
 			return
 		}
 	}else if req.MobileNumber !=""{
-		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, country_code, photo_url FROM employees WHERE mobile_number = $1"
-		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password, &req.CountryCode, &req.PhotoUrl)
+		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender,  password, country_code, photo_url, coins FROM employees WHERE mobile_number = $1"
+		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &password, &req.CountryCode, &req.PhotoUrl, &req.Coins)
 		if err != nil {
 			utils.ErrorResponse(w, "Invalid Mobile Number - "+ err.Error(), http.StatusBadRequest)
 			return

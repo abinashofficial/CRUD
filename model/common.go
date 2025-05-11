@@ -39,4 +39,5 @@ type Signup struct {
 	Token  string `json:"access_token"`
 	CountryCode  string  `json:"country_code"`
 	PhotoUrl  string  `json:"photo_url"`
+	Coins int `json:"coins"` 
 }
