@@ -582,17 +582,17 @@ func (h fieldHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Email ==""{
-		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender, country_code, photo_url FROM employees WHERE mobile_number = $1"
+		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender, country_code, photo_url, coins FROM employees WHERE mobile_number = $1"
 		// password:= ""
-		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode, &req.PhotoUrl)
+		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode, &req.PhotoUrl, &req.Coins)
 		if err != nil {
 			utils.ErrorResponse(w, "Invalid Mobile Number", http.StatusBadRequest)
 			return
 		}
 	}else{
-		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender, country_code, photo_url FROM employees WHERE email = $1"
+		query := "SELECT employee_id, first_name, last_name,mobile_number,  email, date_of_birth,gender, country_code, photo_url, coins FROM employees WHERE email = $1"
 		// password:= ""
-		err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode, &req.PhotoUrl)
+		err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.EmployeeID,&req.FirstName,&req.LastName,&req.MobileNumber, &req.Email,&req.DateOfBirth,&req.Gender, &req.CountryCode, &req.PhotoUrl, &req.Coins)
 		if err != nil {
 			utils.ErrorResponse(w, "Invalid Email", http.StatusBadRequest)
 			return
@@ -741,6 +741,7 @@ func removeClient(userID string, client Client) {
 func  notifyUser(userID string, coins int) {
 	for _, client := range sseClients[userID] {
 		msg := fmt.Sprintf("data: {\"coins\": %d}\n\n", coins)
+		fmt.Println(msg)
 		client.writer.Write([]byte(msg))
 		client.flusher.Flush()
 	}
