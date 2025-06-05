@@ -661,8 +661,10 @@ type Client struct {
 	done    chan struct{}
 }
 
-var sseClients = make(map[string][]Client)// userID → message channel
-
+var (
+    sseClients = make(map[string][]Client)
+    sseClientsMu sync.RWMutex
+)
 
 
 
@@ -719,7 +721,14 @@ func (h fieldHandler)SSEHandler(w http.ResponseWriter, r *http.Request) {
 
 
 func removeClient(userID string, client Client) {
-	activeClients := sseClients[userID]
+	sseClientsMu.Lock()
+	defer sseClientsMu.Unlock()
+
+	val, ok := sseClients[userID]
+	if !ok {
+		return
+	}
+	activeClients := val
 	updatedClients := make([]Client, 0)
 
 	for _, c := range activeClients {
@@ -731,11 +740,12 @@ func removeClient(userID string, client Client) {
 	if len(updatedClients) == 0 {
 		delete(sseClients, userID)
 		log.Printf("No more connections for user: %s. Cache cleared.", userID)
-		// 🔥 Clear user-specific cache here if needed
+		// 🔥 Optional: clear user-specific cache here
 	} else {
 		sseClients[userID] = updatedClients
 	}
 }
+
 
 
 func  notifyUser(userID string, coins int) {
