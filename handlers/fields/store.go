@@ -424,7 +424,7 @@ func (h fieldHandler)SendOTPEmailHandler(w http.ResponseWriter, r *http.Request)
 	subject := "Your OTP Code"
 	body := fmt.Sprintf("Your OTP code is: %s", otp)
 	if err := utils.SendEmail(req.Email, subject, body); err != nil {
-		http.Error(w, "Failed to send OTP", http.StatusInternalServerError)
+		http.Error(w, "Failed to send OTP Email- " + err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -468,14 +468,14 @@ func (h fieldHandler)SendOTPMobHandler(w http.ResponseWriter, r *http.Request) {
 	// Perform the GET request
 	resp, err := http.Get(url)
 	if err != nil {
-		http.Error(w, "Failed to Send OTP", http.StatusInternalServerError)
+		http.Error(w, "Failed to Send OTP Mobile Number - " + err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
 	// Check if the status code is 200 (OK)
 	if resp.StatusCode != http.StatusOK {
-		http.Error(w, "Failed to Send OTP in Status Code", http.StatusInternalServerError)
+		http.Error(w, "Failed to Send OTP Mobile Number in Status Code", http.StatusInternalServerError)
 		return
 		}
 
