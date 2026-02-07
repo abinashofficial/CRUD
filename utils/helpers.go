@@ -125,8 +125,8 @@ func SendEmail(to, subject, body string) error {
 	smtpPort := 587
 
 
-	from := "prisonbirdstech@gmail.com"  // Replace with your email
-	appPassword := "gwtx dtxx gppp stki"    // Replace with your email password
+	from := "shindentechnologies@gmail.com"  // Replace with your email
+	appPassword := "vigr cbuj gope nrse"    // Replace with your email password
 
 	// Create a new gomail message
 	m := gomail.NewMessage()
