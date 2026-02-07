@@ -138,7 +138,5 @@ func SendEmail(to, subject, body string) error {
 
 	// Dial and send the email
 	d := gomail.NewDialer(smtpHost, smtpPort, from, appPassword)
-	d.StartTLSPolicy = gomail.MandatoryStartTLS
-	d.Timeout = 30 * time.Second
 	return d.DialAndSend(m)
 }
