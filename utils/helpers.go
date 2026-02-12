@@ -115,28 +115,29 @@ func GenerateOTP(length int) (string, error) {
 	return otp, nil
 }
 
-// SendEmail sends an email with the OTP using gomail
-func SendEmail(to, subject, body string) error {
-	// from := os.Getenv("FROM_EMAIL")
-	// password := os.Getenv("EMAIL_PASSWORD")
+	// SendEmail sends an email with the OTP using gomail
+	func SendEmail(to, subject, body string) error {
+		// from := os.Getenv("FROM_EMAIL")
+		// password := os.Getenv("EMAIL_PASSWORD")
 
 
-	// SMTP server configuration
-	smtpHost := "smtp.gmail.com"
-	smtpPort := 587
+		// SMTP server configuration
+		smtpHost := "smtp.gmail.com"
+		smtpPort := 465
 
 
-	from := "shindentechnologies@gmail.com"  // Replace with your email
-	appPassword := "vigr cbuj gope nrse"    // Replace with your email password
+		from := "shindentechnologies@gmail.com"  // Replace with your email
+		appPassword := "vigr cbuj gope nrse"    // Replace with your email password
 
-	// Create a new gomail message
-	m := gomail.NewMessage()
-	m.SetHeader("From", from)
-	m.SetHeader("To", to)
-	m.SetHeader("Subject", subject)
-	m.SetBody("text/plain", body)
+		// Create a new gomail message
+		m := gomail.NewMessage()
+		m.SetHeader("From", from)
+		m.SetHeader("To", to)
+		m.SetHeader("Subject", subject)
+		m.SetBody("text/plain", body)
 
-	// Dial and send the email
-	d := gomail.NewDialer(smtpHost, smtpPort, from, appPassword)
-	return d.DialAndSend(m)
-}
+		// Dial and send the email
+		d := gomail.NewDialer(smtpHost, smtpPort, from, appPassword)
+		d.SSL = true 
+		return d.DialAndSend(m)
+	}
