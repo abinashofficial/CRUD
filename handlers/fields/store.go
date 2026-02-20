@@ -287,6 +287,38 @@ func (h fieldHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	utils.ReturnResponse(w, http.StatusOK, req)
 }
 
+func (h fieldHandler) Internship(w http.ResponseWriter, r *http.Request) {
+	req := model.Internship{}
+	// ctx := r.Context()
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	query := "SELECT email FROM internship WHERE email = $1"
+    err = h.sqlDB.QueryRow(query, req.Email).Scan(&req.Email)
+		if err == nil {
+			utils.ErrorResponse(w, "Email ID Already Exist", http.StatusBadRequest)
+			return
+		}
+		query = "SELECT mobile_number FROM internship WHERE mobile_number = $1"
+		err = h.sqlDB.QueryRow(query, req.MobileNumber).Scan(&req.MobileNumber)
+			if err == nil {
+				utils.ErrorResponse(w, "Mobile Number Already Exist", http.StatusUnauthorized)
+				return
+			}
+
+
+			query = `INSERT INTO internship (first_name, last_name, mobile_number, email, date_of_birth, gender,  country_code, photo_url, role, duration ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING mobile_number`
+		err = h.sqlDB.QueryRow(query, req.FirstName, req.LastName,req.MobileNumber, req.Email, req.DateOfBirth, req.Gender, req.CountryCode, req.PhotoUrl, req.Role, req.Duration).Scan(&req.MobileNumber)
+		if err != nil {
+			utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	utils.ReturnResponse(w, http.StatusOK, req)
+}
+
 func (h fieldHandler) PasswordChange(w http.ResponseWriter, r *http.Request) {
 	req := model.Signup{}
 	// ctx := r.Context()

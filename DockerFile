@@ -1,15 +1,42 @@
-FROM golang:1.20-alpine AS build
-RUN mkdir  /app
-COPY . /app
+# -----------------------
+# 1️⃣ Build Stage
+# -----------------------
+FROM golang:1.20-alpine AS builder
+
+# Install git (if using go modules) and ca-certificates
+RUN apk add --no-cache git ca-certificates
+
 WORKDIR /app
 
-RUN go build -ldflags="-s -w" -o main .
+# Copy Go modules files first for caching
+COPY go.mod go.sum ./
+RUN go mod download
 
+# Copy the rest of the source code
+COPY . .
 
+# Build static binary (smaller size)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o main .
+
+# -----------------------
+# 2️⃣ Runtime Stage
+# -----------------------
 FROM alpine:latest
+
+# Add CA certificates for HTTPS support
+RUN apk add --no-cache ca-certificates
+
 WORKDIR /app
-COPY --from=build /app/main .
+
+# Copy the binary from builder
+COPY --from=builder /app/main .
+
+# Use a non-root user (optional but recommended)
+RUN adduser -D -u 1000 appuser
+USER appuser
+
+# Expose port if your Go app listens (e.g., 8080)
+EXPOSE 8080
+
+# Run the app
 CMD ["./main"]
-
-
-

@@ -41,3 +41,16 @@ type Signup struct {
 	PhotoUrl  string  `json:"photo_url"`
 	Coins int `json:"coins"` 
 }
+
+type Internship struct {
+	FirstName    string `json:"first_name"`
+	LastName string `json:"last_name"`
+	MobileNumber string `json:"mobile_number"`
+	Email string `json:"email"`
+	DateOfBirth string `json:"date_of_birth"`
+	Gender string `json:"gender"`
+	CountryCode  string  `json:"country_code"`
+	PhotoUrl  string  `json:"photo_url"`
+	Role  string  `json:"role"`
+	Duration  string  `json:"duration"`
+}
