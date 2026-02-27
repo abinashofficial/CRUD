@@ -308,10 +308,12 @@ func (h fieldHandler) Internship(w http.ResponseWriter, r *http.Request) {
 				utils.ErrorResponse(w, "Mobile Number Already Exist", http.StatusUnauthorized)
 				return
 			}
+						req.CreatedAt = time.Now().UTC()
 
 
-			query = `INSERT INTO internship (first_name, last_name, mobile_number, email, date_of_birth, gender,  country_code, photo_url, role, duration ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8,) RETURNING mobile_number`
-		err = h.sqlDB.QueryRow(query, req.FirstName, req.LastName,req.MobileNumber, req.Email, req.DateOfBirth, req.Gender, req.CountryCode, req.PhotoUrl, req.Role, req.Duration).Scan(&req.MobileNumber)
+
+			query = `INSERT INTO internship (first_name, last_name, mobile_number, email, date_of_birth, gender,  country_code, photo_url, role, duration, status, college_name, created_at ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9, $10, $11, $12, $13) RETURNING mobile_number`
+		err = h.sqlDB.QueryRow(query, req.FirstName, req.LastName,req.MobileNumber, req.Email, req.DateOfBirth, req.Gender, req.CountryCode, req.PhotoUrl, req.Role, req.Duration, req.Status, req.CollegeName, req.CreatedAt).Scan(&req.MobileNumber)
 		if err != nil {
 			utils.ErrorResponse(w, err.Error(), http.StatusInternalServerError)
 			return

@@ -54,6 +54,10 @@ type Internship struct {
 	PhotoUrl     string `json:"photo_url"`
 	Role         string `json:"role"`
 	Duration     string `json:"duration"`
+	Status string `json:"status"`
+	CreatedAt    time.Time `json:"created_at"`
+	CollegeName string `json:"college_name"`
+
 }
 
 type Visitor struct {
