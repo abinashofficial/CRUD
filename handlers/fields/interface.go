@@ -12,6 +12,8 @@ type Handler interface {
 	Login(w http.ResponseWriter, r *http.Request)
 	Signup(w http.ResponseWriter, r *http.Request)
 	Internship(w http.ResponseWriter, r *http.Request)
+	Visitor(w http.ResponseWriter, r *http.Request)
+
 	PasswordChange(w http.ResponseWriter, r *http.Request)
 	UpdateProfile(w http.ResponseWriter, r *http.Request)
 	SendOTPEmailHandler(w http.ResponseWriter, r *http.Request)
