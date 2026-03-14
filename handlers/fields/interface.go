@@ -17,6 +17,7 @@ type Handler interface {
 	UpdateProfile(w http.ResponseWriter, r *http.Request)
 	SendOTPEmailHandler(w http.ResponseWriter, r *http.Request)
 	SendOTPMobHandler(w http.ResponseWriter, r *http.Request)
+	TelegramAuth(w http.ResponseWriter, r *http.Request)
 	VerifyOTPHandler(w http.ResponseWriter, r *http.Request)
 	GetUser(w http.ResponseWriter, r *http.Request)
 	HandleConnections(w http.ResponseWriter, r *http.Request)

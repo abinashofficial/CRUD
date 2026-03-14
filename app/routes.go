@@ -58,6 +58,8 @@ func runServer(envPort string, h handlers.Store) {
 	r.HandleFunc("/public/verify-otp", h.FieldsHandler.VerifyOTPHandler).Methods(http.MethodPost)
 	r.HandleFunc("/public/get-user", h.FieldsHandler.GetUser).Methods(http.MethodPost)
 	r.HandleFunc("/public/send-otp-mobile-no", h.FieldsHandler.SendOTPMobHandler).Methods(http.MethodPost)
+	r.HandleFunc("/public/auth/telegram", h.FieldsHandler.TelegramAuth).Methods(http.MethodPost)
+
 
 	// WebSocket route
 	r.HandleFunc("/ws", h.FieldsHandler.HandleConnections).Methods(http.MethodGet)

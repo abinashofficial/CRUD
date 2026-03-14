@@ -15,6 +15,10 @@ import (
 	"time"
 	"github.com/gorilla/websocket"
 	"log"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"sort"
 )
 
 
@@ -61,6 +65,10 @@ var upgrader = websocket.Upgrader{
 // Store user connections
 var clients = make(map[string]*websocket.Conn)
 var mu sync.Mutex
+
+const BOT_TOKEN = "8717251126:AAFZk2W8f-cQn-vU6WB3Nz7HaduyOWM-3yo"
+
+
 
 
 func (h fieldHandler) CreateAll(w http.ResponseWriter, r *http.Request) {
@@ -825,3 +833,59 @@ func  notifyUser(userID string, coins int) {
 	}
 	
 }
+
+func verifyTelegram(data map[string]interface{}) bool {
+	// Extract and remove hash
+	hash := fmt.Sprintf("%v", data["hash"])
+	delete(data, "hash")
+
+	// Convert all values to string
+	dataStr := map[string]string{}
+	for k, v := range data {
+		dataStr[k] = fmt.Sprintf("%v", v) // ensures numbers become strings
+	}
+
+	// Sort keys alphabetically
+	keys := make([]string, 0, len(dataStr))
+	for k := range dataStr {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	// Build check string
+	parts := []string{}
+	for _, k := range keys {
+		parts = append(parts, fmt.Sprintf("%s=%s", k, dataStr[k]))
+	}
+	checkString := strings.Join(parts, "\n")
+
+	// Compute HMAC SHA256
+	secret := sha256.Sum256([]byte(BOT_TOKEN))
+	h := hmac.New(sha256.New, secret[:])
+	h.Write([]byte(checkString))
+	calculated := hex.EncodeToString(h.Sum(nil))
+
+	return calculated == hash
+}
+
+
+func (h fieldHandler) TelegramAuth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var data map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"status": "error", "error": err.Error()})
+		return
+	}
+
+	if verifyTelegram(data) {
+		fmt.Println("User verified:", data["id"])
+		json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+		return
+	}
+
+	w.WriteHeader(http.StatusUnauthorized)
+	json.NewEncoder(w).Encode(map[string]string{"status": "invalid"})
+}
+
