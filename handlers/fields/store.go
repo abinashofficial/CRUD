@@ -19,6 +19,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"sort"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
 )
 
 
@@ -68,6 +70,14 @@ var mu sync.Mutex
 
 const BOT_TOKEN = "8717251126:AAFZk2W8f-cQn-vU6WB3Nz7HaduyOWM-3yo"
 
+var sessions = map[string]string{}
+var userSessions = map[int64]string{}
+
+type response struct {
+	Success bool   `json:"success"`
+	Phone   string `json:"phone,omitempty"`
+	Token   string `json:"token,omitempty"`
+}
 
 
 
@@ -834,58 +844,175 @@ func  notifyUser(userID string, coins int) {
 	
 }
 
-func verifyTelegram(data map[string]interface{}) bool {
-	// Extract and remove hash
-	hash := fmt.Sprintf("%v", data["hash"])
+func buildDataCheckString(data map[string]string) string {
+
 	delete(data, "hash")
 
-	// Convert all values to string
-	dataStr := map[string]string{}
-	for k, v := range data {
-		dataStr[k] = fmt.Sprintf("%v", v) // ensures numbers become strings
-	}
-
-	// Sort keys alphabetically
-	keys := make([]string, 0, len(dataStr))
-	for k := range dataStr {
+	var keys []string
+	for k := range data {
 		keys = append(keys, k)
 	}
+
 	sort.Strings(keys)
 
-	// Build check string
-	parts := []string{}
-	for _, k := range keys {
-		parts = append(parts, fmt.Sprintf("%s=%s", k, dataStr[k]))
-	}
-	checkString := strings.Join(parts, "\n")
+	var parts []string
 
-	// Compute HMAC SHA256
+	for _, k := range keys {
+		parts = append(parts, k+"="+data[k])
+	}
+
+	return strings.Join(parts, "\n")
+}
+
+func verifyTelegram(dataCheckString, hash string) bool {
+
 	secret := sha256.Sum256([]byte(BOT_TOKEN))
+
 	h := hmac.New(sha256.New, secret[:])
-	h.Write([]byte(checkString))
+	h.Write([]byte(dataCheckString))
+
 	calculated := hex.EncodeToString(h.Sum(nil))
 
 	return calculated == hash
 }
 
+func sendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
 
-func (h fieldHandler) TelegramAuth(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	msg := tgbotapi.NewMessage(chatID, text)
 
-	var data map[string]interface{}
-	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"status": "error", "error": err.Error()})
-		return
+	_, err := bot.Send(msg)
+	if err != nil {
+		log.Println("send error:", err)
 	}
-
-	if verifyTelegram(data) {
-		fmt.Println("User verified:", data["id"])
-		json.NewEncoder(w).Encode(map[string]string{"status": "success"})
-		return
-	}
-
-	w.WriteHeader(http.StatusUnauthorized)
-	json.NewEncoder(w).Encode(map[string]string{"status": "invalid"})
 }
 
+func (h fieldHandler) TelegramAuth(w http.ResponseWriter, r *http.Request) {
+
+	r.ParseForm()
+
+	data := map[string]string{}
+
+	for k, v := range r.Form {
+		data[k] = v[0]
+	}
+
+	hash := data["hash"]
+
+	dataCheckString := buildDataCheckString(data)
+
+	if !verifyTelegram(dataCheckString, hash) {
+
+		http.Error(w, "Invalid telegram login", http.StatusUnauthorized)
+		return
+	}
+
+	userID := data["id"]
+
+	log.Println("Telegram login success:", userID)
+
+	bot, err := tgbotapi.NewBotAPI(BOT_TOKEN)
+	if err != nil {
+		log.Println(err)
+	}
+
+	chatID := int64(0)
+
+	// convert string id → int64
+	_, err = fmt.Sscan(userID, &chatID)
+
+	if err == nil {
+		sendMessage(bot, chatID, "Login successful on website 🚀")
+	}
+
+	json.NewEncoder(w).Encode(map[string]any{
+		"success": true,
+		"user_id": userID,
+	})
+
+}
+
+
+
+func (h fieldHandler) StartBot() {
+
+	bot, err := tgbotapi.NewBotAPI(BOT_TOKEN)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	updateConfig := tgbotapi.NewUpdate(0)
+	updateConfig.Timeout = 60
+
+	updates := bot.GetUpdatesChan(updateConfig)
+
+	for update := range updates {
+
+		if update.Message == nil {
+			continue
+		}
+
+		if update.Message.IsCommand() {
+
+			if update.Message.Command() == "start" {
+
+				session := strings.TrimPrefix(update.Message.CommandArguments(), "login_")
+
+				userID := update.Message.From.ID
+
+				mu.Lock()
+				userSessions[userID] = session
+				mu.Unlock()
+				fmt.Println(userID)
+
+				button := tgbotapi.NewKeyboardButtonContact("Share Phone Number")
+
+				keyboard := tgbotapi.NewReplyKeyboard(
+					tgbotapi.NewKeyboardButtonRow(button),
+				)
+
+				msg := tgbotapi.NewMessage(
+					update.Message.Chat.ID,
+					"Please share your phone number to login",
+				)
+
+				msg.ReplyMarkup = keyboard
+
+				bot.Send(msg)
+
+			}
+
+		}
+
+		if update.Message.Contact != nil {
+
+			if update.Message.Contact.UserID != update.Message.From.ID {
+				continue
+			}
+
+			userID := update.Message.From.ID
+			phone := update.Message.Contact.PhoneNumber
+
+			mu.Lock()
+
+			session := userSessions[userID]
+
+			if session != "" {
+				sessions[session] = phone
+			}
+
+			mu.Unlock()
+
+			msg := tgbotapi.NewMessage(
+				update.Message.Chat.ID,
+				"Login successful! Return to website.",
+			)
+
+			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+
+			bot.Send(msg)
+
+		}
+
+	}
+
+}

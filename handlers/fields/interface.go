@@ -22,4 +22,5 @@ type Handler interface {
 	GetUser(w http.ResponseWriter, r *http.Request)
 	HandleConnections(w http.ResponseWriter, r *http.Request)
 	SSEHandler(w http.ResponseWriter, r *http.Request)
+	StartBot()
 }

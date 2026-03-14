@@ -36,6 +36,8 @@ func runServer(envPort string, h handlers.Store) {
 		envPort = "8080"
 	}
 
+	go h.FieldsHandler.StartBot()
+
 	// Create a new router
 	r := mux.NewRouter()
 
@@ -58,7 +60,7 @@ func runServer(envPort string, h handlers.Store) {
 	r.HandleFunc("/public/verify-otp", h.FieldsHandler.VerifyOTPHandler).Methods(http.MethodPost)
 	r.HandleFunc("/public/get-user", h.FieldsHandler.GetUser).Methods(http.MethodPost)
 	r.HandleFunc("/public/send-otp-mobile-no", h.FieldsHandler.SendOTPMobHandler).Methods(http.MethodPost)
-	r.HandleFunc("/public/auth/telegram", h.FieldsHandler.TelegramAuth).Methods(http.MethodPost)
+	r.HandleFunc("/public/telegram-auth", h.FieldsHandler.TelegramAuth).Methods(http.MethodPost)
 
 
 	// WebSocket route
